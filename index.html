@@ -1,793 +1,999 @@
 <!DOCTYPE html>
 <html lang="it" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MacroLab Hybrid Elite</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        dark: {
-                            900: '#121212',
-                            800: '#1e1e1e',
-                            700: '#2a2a2a',
-                            600: '#3f3f3f',
-                        }
-                    }
-                }
-            }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MacroLab Hybrid Elite</title>
+  <!-- Tailwind CSS v3 via CDN (per uso immediato offline/online con classi standard) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            darkbg: '#0f172a',
+            cardbg: '#1e293b',
+            accent: '#3b82f6',
+            success: '#10b981',
+            warning: '#f59e0b',
+          }
         }
-    </script>
+      }
+    }
+  </script>
 </head>
-<body class="bg-dark-900 text-gray-100 min-h-screen font-sans antialiased pb-20">
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white pb-24">
 
-    <!-- HEADER / DASHBOARD TELEMETRY (Sticky) -->
-    <header class="sticky top-0 z-50 bg-dark-800/95 backdrop-blur border-b border-dark-700 shadow-xl">
-        <div class="max-w-md mx-auto px-4 py-3">
-            <div class="flex justify-between items-center mb-2">
-                <div>
-                    <h1 class="font-bold text-lg tracking-wide text-emerald-400">MacroLab Hybrid Elite</h1>
-                    <p id="current-day-label" class="text-xs text-gray-400">Caricamento giorno...</p>
-                </div>
-                <div id="sync-status" class="text-xs px-2 py-1 rounded bg-dark-700 text-yellow-400 font-mono">OFFLINE</div>
-            </div>
+  <!-- HEADER & STATUS BAR -->
+  <header class="sticky top-0 z-50 bg-slate-900/95 backdrop-blur border-b border-slate-800 px-4 py-3 shadow-md">
+    <div class="max-w-xl mx-auto flex items-center justify-between">
+      <div>
+        <h1 class="text-lg font-bold tracking-tight text-blue-400 flex items-center gap-2">
+          ⚡ MacroLab <span class="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono">Hybrid Elite v3.2</span>
+        </h1>
+        <p class="text-xs text-slate-400">Lean Bulk • 170g P • 80g F • Attività Dinamica</p>
+      </div>
+      <div id="sync-badge" class="text-xs px-2.5 py-1 rounded-full font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span id="sync-text">Cloud Sync Attivo</span>
+      </div>
+    </div>
+  </header>
 
-            <!-- Selettore Giornata -->
-            <div class="mb-3">
-                <select id="day-selector" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-emerald-500">
-                    <option value="lunedì">Lunedì: Pesi + Studio (+300 kcal)</option>
-                    <option value="martedì">Martedì: Pesi + Corsa (+700 kcal)</option>
-                    <option value="mercoledì">Mercoledì: Pesi + Studio (+300 kcal)</option>
-                    <option value="giovedì">Giovedì: Pesi + Calcio (+900 kcal)</option>
-                    <option value="venerdì">Venerdì: Pesi + Studio (+300 kcal)</option>
-                    <option value="sabato">Sabato: Nuoto / Scarico (+400 kcal)</option>
-                    <option value="domenica">Domenica: Solo Partita (+750 kcal)</option>
-                </select>
-            </div>
-
-            <!-- Progress Bars -->
-            <div class="grid grid-cols-4 gap-2 text-center text-xs">
-                <!-- Calorie -->
-                <div class="bg-dark-700/60 p-1.5 rounded-lg border border-dark-600">
-                    <div class="text-gray-400 mb-0.5">Kcal</div>
-                    <div id="bar-kcal-text" class="font-bold text-gray-100 text-[11px]">0 / 0</div>
-                    <div class="w-full bg-dark-900 rounded-full h-1.5 mt-1 overflow-hidden">
-                        <div id="bar-kcal" class="bg-emerald-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
-                    </div>
-                </div>
-                <!-- Proteine -->
-                <div class="bg-dark-700/60 p-1.5 rounded-lg border border-dark-600">
-                    <div class="text-gray-400 mb-0.5">Pro (170g)</div>
-                    <div id="bar-pro-text" class="font-bold text-gray-100 text-[11px]">0g</div>
-                    <div class="w-full bg-dark-900 rounded-full h-1.5 mt-1 overflow-hidden">
-                        <div id="bar-pro" class="bg-blue-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
-                    </div>
-                </div>
-                <!-- Carboidrati -->
-                <div class="bg-dark-700/60 p-1.5 rounded-lg border border-dark-600">
-                    <div class="text-gray-400 mb-0.5">Carb</div>
-                    <div id="bar-cho-text" class="font-bold text-gray-100 text-[11px]">0g</div>
-                    <div class="w-full bg-dark-900 rounded-full h-1.5 mt-1 overflow-hidden">
-                        <div id="bar-cho" class="bg-amber-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
-                    </div>
-                </div>
-                <!-- Grassi -->
-                <div class="bg-dark-700/60 p-1.5 rounded-lg border border-dark-600">
-                    <div class="text-gray-400 mb-0.5">Fat (80g)</div>
-                    <div id="bar-fat-text" class="font-bold text-gray-100 text-[11px]">0g</div>
-                    <div class="w-full bg-dark-900 rounded-full h-1.5 mt-1 overflow-hidden">
-                        <div id="bar-fat" class="bg-rose-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
-                    </div>
-                </div>
-            </div>
+  <!-- TELEMETRY DASHBOARD (STICKY) -->
+  <section class="sticky top-[57px] z-40 bg-slate-950/95 backdrop-blur border-b border-slate-800/80 px-4 py-3 shadow-lg">
+    <div class="max-w-xl mx-auto space-y-2.5">
+      <!-- GIORNATA & ATTIVITA -->
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5">
+          <button onclick="changeDayOffset(-1)" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-xs font-bold">◀</button>
+          <input type="date" id="current-date-picker" onchange="onDateChanged(this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-200 font-medium focus:outline-none focus:border-blue-500">
+          <button onclick="changeDayOffset(1)" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-xs font-bold">▶</button>
         </div>
-    </header>
+        <select id="activity-preset" onchange="updateActivityPreset(this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-blue-300 font-medium focus:outline-none focus:border-blue-500">
+          <option value="studio">Pesi + Studio (+300 kcal)</option>
+          <option value="corsa">Pesi + Corsa (+700 kcal)</option>
+          <option value="calcio">Pesi + Calcio (+900 kcal)</option>
+          <option value="partita">Solo Partita - Dom (+750 kcal)</option>
+          <option value="nuoto">Nuoto / Scarico - Sab (+400 kcal)</option>
+        </select>
+      </div>
 
-    <!-- NAV TABS -->
-    <nav class="max-w-md mx-auto px-4 mt-3">
-        <div class="flex bg-dark-800 p-1 rounded-xl border border-dark-700 text-xs font-medium">
-            <button onclick="switchTab('today')" id="tab-today" class="flex-1 py-2 text-center rounded-lg bg-emerald-600 text-white transition">Oggi</button>
-            <button onclick="switchTab('plan')" id="tab-plan" class="flex-1 py-2 text-center rounded-lg text-gray-400 hover:text-white transition">Piano</button>
-            <button onclick="switchTab('presets')" id="tab-presets" class="flex-1 py-2 text-center rounded-lg text-gray-400 hover:text-white transition">Preset</button>
-            <button onclick="switchTab('sync')" id="tab-sync" class="flex-1 py-2 text-center rounded-lg text-gray-400 hover:text-white transition">Cloud</button>
+      <!-- PROGRESS BAR CALORIE -->
+      <div>
+        <div class="flex justify-between text-xs font-medium mb-1">
+          <span class="text-slate-300">Calorie Target Lean Bulk</span>
+          <span id="cal-text" class="font-mono text-blue-400">0 / 0 kcal</span>
         </div>
-    </nav>
-
-    <!-- MAIN CONTAINER -->
-    <main class="max-w-md mx-auto px-4 mt-4 space-y-4">
-
-        <!-- TAB: OGGI (DIARIO PASTI) -->
-        <div id="view-today" class="space-y-4">
-            <!-- Navigatore Data -->
-            <div class="bg-dark-800 border border-dark-700 rounded-xl p-3 flex items-center justify-between">
-                <button onclick="changeDate(-1)" class="px-3 py-1 bg-dark-700 hover:bg-dark-600 rounded-lg text-xs font-bold">&larr; Prec</button>
-                <input type="date" id="date-picker" onchange="onDateChange(this.value)" class="bg-dark-900 border border-dark-600 rounded-lg px-3 py-1 text-xs text-gray-200 focus:outline-none">
-                <button onclick="changeDate(1)" class="px-3 py-1 bg-dark-700 hover:bg-dark-600 rounded-lg text-xs font-bold">Succ &rarr;</button>
-            </div>
-            <div class="flex justify-between items-center px-1">
-                <button onclick="copyFromYesterday()" class="text-xs bg-dark-800 border border-dark-700 hover:bg-dark-700 text-emerald-400 px-3 py-1.5 rounded-lg transition">📋 Copia da Ieri</button>
-                <button onclick="loadMealPlanForDay()" class="text-xs bg-dark-800 border border-dark-700 hover:bg-dark-700 text-blue-400 px-3 py-1.5 rounded-lg transition">⚡ Carica Giorno Piano</button>
-            </div>
-
-            <!-- 5 Blocchi Pasto -->
-            <div id="meals-container" class="space-y-4">
-                <!-- Generato via JavaScript -->
-            </div>
+        <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+          <div id="cal-bar" class="bg-blue-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
         </div>
+      </div>
 
-        <!-- TAB: PIANO SETTIMANALE -->
-        <div id="view-plan" class="hidden space-y-3">
-            <h2 class="font-bold text-sm text-gray-300">Gestione Piano Alimentazione</h2>
-            <div id="plan-container" class="space-y-2 text-xs"></div>
+      <!-- PROGRESS BAR MACROS (P, C, F) -->
+      <div class="grid grid-cols-3 gap-2 pt-1">
+        <!-- Proteine -->
+        <div class="bg-slate-900/80 p-2 rounded-xl border border-slate-800">
+          <div class="flex justify-between text-[10px] font-medium mb-1">
+            <span class="text-slate-400">Proteine</span>
+            <span id="pro-text" class="font-mono text-emerald-400">0/170g</span>
+          </div>
+          <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+            <div id="pro-bar" class="bg-emerald-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
         </div>
-
-        <!-- TAB: PRESET E OFF-GRID -->
-        <div id="view-presets" class="hidden space-y-4">
-            <div class="bg-dark-800 border border-dark-700 rounded-xl p-4">
-                <h2 class="font-bold text-sm text-emerald-400 mb-2">⚡ Pasti Off-Grid (Famiglia)</h2>
-                <p class="text-xs text-gray-400 mb-3">Preset rapidi per pranzi o cene non tracciabili al grammo.</p>
-                <div class="space-y-2" id="offgrid-presets-list">
-                    <!-- Generato via JS -->
-                </div>
-            </div>
-
-            <div class="bg-dark-800 border border-dark-700 rounded-xl p-4">
-                <h2 class="font-bold text-sm text-gray-200 mb-2">Preset Pasti Standard</h2>
-                <div id="custom-presets-list" class="space-y-2 text-xs"></div>
-            </div>
+        <!-- Carboidrati -->
+        <div class="bg-slate-900/80 p-2 rounded-xl border border-slate-800">
+          <div class="flex justify-between text-[10px] font-medium mb-1">
+            <span class="text-slate-400">Carboidrati</span>
+            <span id="cho-text" class="font-mono text-amber-400">0g</span>
+          </div>
+          <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+            <div id="cho-bar" class="bg-amber-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
         </div>
-
-        <!-- TAB: CLOUD SYNC -->
-        <div id="view-sync" class="hidden space-y-4">
-            <div class="bg-dark-800 border border-dark-700 rounded-xl p-4 space-y-3">
-                <h2 class="font-bold text-sm text-gray-200">GitHub Gist Cloud Sync</h2>
-                <p class="text-xs text-gray-400">Sincronizza i tuoi pasti tra Android, PC Windows e iPad senza perdere dati.</p>
-                
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">GitHub Token (gist scope)</label>
-                    <input type="password" id="sync-token" placeholder="ghp_..." class="w-full bg-dark-900 border border-dark-600 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-emerald-500">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">Gist ID</label>
-                    <input type="text" id="sync-gist-id" placeholder="ID del Gist privato" class="w-full bg-dark-900 border border-dark-600 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-emerald-500">
-                </div>
-
-                <div class="flex items-center justify-between pt-2">
-                    <label class="text-xs text-gray-300 font-medium">Auto-Sync in tempo reale</label>
-                    <input type="checkbox" id="sync-auto" class="w-4 h-4 accent-emerald-500" checked>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2 pt-2">
-                    <button onclick="createGist()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded-lg text-xs transition">Crea Nuovo Gist</button>
-                    <button onclick="pullFromGist()" class="bg-dark-700 hover:bg-dark-600 text-gray-200 font-medium py-2 rounded-lg text-xs transition">Pull da Cloud</button>
-                </div>
-                <button onclick="pushToGist()" class="w-full bg-dark-700 hover:bg-dark-600 text-gray-200 font-medium py-2 rounded-lg text-xs transition">Push Manuale su Cloud</button>
-            </div>
+        <!-- Grassi -->
+        <div class="bg-slate-900/80 p-2 rounded-xl border border-slate-800">
+          <div class="flex justify-between text-[10px] font-medium mb-1">
+            <span class="text-slate-400">Grassi</span>
+            <span id="fat-text" class="font-mono text-rose-400">0/80g</span>
+          </div>
+          <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+            <div id="fat-bar" class="bg-rose-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
         </div>
+      </div>
+    </div>
+  </section>
 
-    </main>
+  <!-- NAVIGATION TABS -->
+  <nav class="max-w-xl mx-auto w-full px-4 pt-3">
+    <div class="grid grid-cols-5 gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs font-medium text-center">
+      <button onclick="switchTab('today')" id="tab-today" class="py-2 rounded-lg transition text-blue-400 bg-slate-800 font-semibold">Oggi</button>
+      <button onclick="switchTab('plan')" id="tab-plan" class="py-2 rounded-lg transition text-slate-400 hover:text-slate-200">Piano</button>
+      <button onclick="switchTab('presets')" id="tab-presets" class="py-2 rounded-lg transition text-slate-400 hover:text-slate-200">Preset</button>
+      <button onclick="switchTab('history')" id="tab-history" class="py-2 rounded-lg transition text-slate-400 hover:text-slate-200">Storico</button>
+      <button onclick="switchTab('sync')" id="tab-sync" class="py-2 rounded-lg transition text-slate-400 hover:text-slate-200">Cloud</button>
+    </div>
+  </nav>
 
-    <!-- MODAL AGGIUNGI ALIMENTO -->
-    <div id="food-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <div class="bg-dark-800 w-full max-w-md rounded-t-2xl sm:rounded-2xl border border-dark-700 max-h-[85vh] flex flex-col overflow-hidden">
-            <div class="p-4 border-b border-dark-700 flex justify-between items-center">
-                <h3 id="modal-title" class="font-bold text-sm text-emerald-400">Aggiungi Alimento</h3>
-                <button onclick="closeFoodModal()" class="text-gray-400 hover:text-white text-lg font-bold px-2">&times;</button>
-            </div>
-            <div class="p-4 border-b border-dark-700 space-y-3">
-                <input type="text" id="food-search" placeholder="Cerca alimento nel database..." oninput="filterFoodDatabase()" class="w-full bg-dark-900 border border-dark-600 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-emerald-500">
-                <div class="flex items-center space-x-2">
-                    <span class="text-xs text-gray-400">Quantità (g / ml):</span>
-                    <input type="number" id="food-grams" value="100" min="1" class="w-24 bg-dark-900 border border-dark-600 rounded-lg px-3 py-1.5 text-xs text-gray-200 text-center font-bold focus:outline-none focus:border-emerald-500">
-                </div>
-            </div>
-            <div id="food-list-container" class="overflow-y-auto p-4 space-y-2 flex-1 divide-y divide-dark-700/50">
-                <!-- Elenco alimenti filtrati -->
-            </div>
-        </div>
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="max-w-xl mx-auto w-full px-4 py-4 space-y-4 flex-1">
+
+    <!-- TAB 1: DIARIO GIORNALIERO (OGGI) -->
+    <div id="view-today" class="space-y-4">
+      <!-- Copia da Ieri -->
+      <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80 text-xs">
+        <span class="text-slate-400">Gestione rapida diario:</span>
+        <button onclick="copyFromYesterday()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-blue-300 font-medium transition flex items-center gap-1.5">
+          📋 Copia da Ieri
+        </button>
+      </div>
+
+      <!-- 5 BLOCCHI PASTO -->
+      <div id="meal-blocks-container" class="space-y-4">
+        <!-- Generato dinamicamente via JS -->
+      </div>
     </div>
 
-    <!-- JAVASCRIPT LOGIC -->
-    <script>
-        // --- HARDCODED DOMAIN & NUTRITION DATA ---
-        const USER_PROFILE = { weight: 76, height: 180, age: 20 };
-        // Mifflin-St Jeor: (10 * 76) + (6.25 * 180) - (5 * 20) + 5 = 1790
-        const BMR = 1790;
-        const NEAT_BASE = 450;
-        const FIXED_PROTEIN = 170; // 2.2g/kg -> 680 kcal
-        const FIXED_FAT = 80;      // ~1g/kg -> 720 kcal
+    <!-- TAB 2: PIANO SETTIMANALE (ALIMENTAZIONE LUN-DOM) -->
+    <div id="view-plan" class="space-y-4 hidden">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+        <h2 class="text-sm font-bold text-blue-400 flex items-center gap-2">📅 Carica Giornata Tipo (Piano Lun-Dom)</h2>
+        <p class="text-xs text-slate-400">Seleziona il giorno della settimana per popolare automaticamente il diario odierno con i pasti pre-impostati originali:</p>
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button onclick="loadWeeklyPlan('lun')" class="p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-left text-xs transition border border-slate-700/50">
+            <span class="font-bold text-blue-300 block">Lunedì</span>
+            <span class="text-[10px] text-slate-400">Pesi + Studio (~3060 kcal)</span>
+          </button>
+          <button onclick="loadWeeklyPlan('mar')" class="p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-left text-xs transition border border-slate-700/50">
+            <span class="font-bold text-blue-300 block">Martedì</span>
+            <span class="text-[10px] text-slate-400">Pesi + Calcio (~3220 kcal)</span>
+          </button>
+          <button onclick="loadWeeklyPlan('mer')" class="p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-left text-xs transition border border-slate-700/50">
+            <span class="font-bold text-blue-300 block">Mercoledì</span>
+            <span class="text-[10px] text-slate-400">Pesi + Studio (~3095 kcal)</span>
+          </button>
+          <button onclick="loadWeeklyPlan('gio')" class="p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-left text-xs transition border border-slate-700/50">
+            <span class="font-bold text-blue-300 block">Giovedì</span>
+            <span class="text-[10px] text-slate-400">Alternativa Schiscetta</span>
+          </button>
+          <button onclick="loadWeeklyPlan('ven')" class="p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-left text-xs transition border border-slate-700/50">
+            <span class="font-bold text-blue-300 block">Venerdì</span>
+            <span class="text-[10px] text-slate-400">Pre-Palestra (~3095 kcal)</span>
+          </button>
+          <button onclick="loadWeeklyPlan('sab')" class="p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-left text-xs transition border border-slate-700/50">
+            <span class="font-bold text-blue-300 block">Sabato (Nuoto)</span>
+            <span class="text-[10px] text-slate-400">Nuoto / Scarico (~3210 kcal)</span>
+          </button>
+          <button onclick="loadWeeklyPlan('dom')" class="p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-left text-xs transition border border-slate-700/50 col-span-2">
+            <span class="font-bold text-blue-300 block">Domenica (Solo Partita)</span>
+            <span class="text-[10px] text-slate-400">Pre/Post Partita + Cena (~2795 kcal)</span>
+          </button>
+        </div>
+      </div>
+    </div>
 
-        const ACTIVITY_ADDITIONS = {
-            'lunedì': 300,    // Pesi + Studio
-            'martedì': 700,   // Pesi + Corsa
-            'mercoledì': 300, // Pesi + Studio
-            'giovedì': 900,   // Pesi + Calcio
-            'venerdì': 300,   // Pesi + Studio
-            'sabato': 400,    // Nuoto / Scarico
-            'domenica': 750   // Solo Partita
+    <!-- TAB 3: GESTIONE PRESET E ALIMENTI CUSTOM -->
+    <div id="view-presets" class="space-y-4 hidden">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+        <h2 class="text-sm font-bold text-blue-400 flex items-center gap-2">🍱 Pasti Pre-impostati & Off-Grid</h2>
+        <p class="text-xs text-slate-400">Modifica i preset esistenti o crea nuovi abbinamenti veloci:</p>
+        <div id="presets-list-container" class="space-y-2 pt-2">
+          <!-- Popolato via JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: STORICO & ADERENZA -->
+    <div id="view-history" class="space-y-4 hidden">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-4">
+        <div class="flex justify-between items-center">
+          <h2 class="text-sm font-bold text-blue-400">📊 Aderenza Nutrizionale</h2>
+          <div class="flex gap-1 bg-slate-800 p-1 rounded-lg text-xs">
+            <button onclick="setHistoryRange(7)" id="btn-range-7" class="px-2.5 py-1 rounded-md bg-blue-600 text-white font-medium transition">7 Giorni</button>
+            <button onclick="setHistoryRange(30)" id="btn-range-30" class="px-2.5 py-1 rounded-md text-slate-400 hover:text-slate-200 transition">30 Giorni</button>
+          </div>
+        </div>
+        <div id="history-stats-container" class="space-y-3">
+          <!-- Popolato via JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: CLOUD SYNC & GITHUB GIST -->
+    <div id="view-sync" class="space-y-4 hidden">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-4">
+        <h2 class="text-sm font-bold text-blue-400 flex items-center gap-2">☁️ Sincronizzazione GitHub Gist</h2>
+        <p class="text-xs text-slate-400">Collega il tuo account GitHub per sincronizzare in tempo reale i pasti tra PC Windows, Android e iPad.</p>
+        
+        <div class="space-y-3 text-xs">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">GitHub Token (con permesso 'gist'):</label>
+            <input type="password" id="sync-token" placeholder="ghp_xxxxxxxxxxxx" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Gist ID:</label>
+            <div class="flex gap-2">
+              <input type="text" id="sync-gist-id" placeholder="Incolla Gist ID o creane uno nuovo" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+              <button onclick="createCloudGist()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-lg font-medium transition whitespace-nowrap">Crea Gist</button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+            <span class="text-slate-300 font-medium">Auto-Sync in background</span>
+            <input type="checkbox" id="sync-auto" onchange="toggleAutoSync(this.checked)" class="w-4 h-4 accent-blue-500 rounded">
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-2">
+            <button onclick="cloudPush()" class="bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl font-medium transition flex items-center justify-center gap-1.5">
+              ⬆️ Push su Cloud
+            </button>
+            <button onclick="cloudPull()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-xl font-medium transition flex items-center justify-center gap-1.5">
+              ⬇️ Pull da Cloud
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODALE AGGIUNGI / MODIFICA ALIMENTO O PRESET -->
+  <div id="modal-container" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center">
+        <h3 id="modal-title" class="text-sm font-bold text-blue-400">Aggiungi Alimento</h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-200 text-sm font-bold">✕</button>
+      </div>
+      <div id="modal-body" class="space-y-3 text-xs">
+        <!-- Dinamico -->
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <button onclick="closeModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium transition">Annulla</button>
+        <button id="modal-submit-btn" onclick="submitModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition">Conferma</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT APPLICATIVO PRINCIPALE -->
+  <script>
+    /* ==========================================================================
+       1. DATABASE ALIMENTI & PRESET INIZIALI (INCLUSI PASTI OFF-GRID)
+       ========================================================================== */
+    const DEFAULT_FOODS = [
+      { id: 'riso', nome: 'Riso basmati (crudo)', pro: 7.0, cho: 78.0, fat: 0.6 },
+      { id: 'pasta', nome: 'Pasta di semola (cruda)', pro: 13.0, cho: 75.0, fat: 1.5 },
+      { id: 'pollo', nome: 'Petto di pollo / tacchino', pro: 23.0, cho: 0.0, fat: 1.0 },
+      { id: 'tonno', nome: 'Tonno al naturale (sgocciolato)', pro: 25.0, cho: 0.0, fat: 1.0 },
+      { id: 'uova', nome: 'Uova intere (circa 1 uovo = 6g P / 5g F)', pro: 12.5, cho: 0.7, fat: 11.0 },
+      { id: 'pane', nome: 'Pane bianco / tostato', pro: 8.0, cho: 50.0, fat: 1.2 },
+      { id: 'avena', nome: 'Farina / Fiocchi di avena', pro: 13.0, cho: 60.0, fat: 7.0 },
+      { id: 'whey', nome: 'Proteine Whey in polvere', pro: 80.0, cho: 5.0, fat: 3.0 },
+      { id: 'banana', nome: 'Banana fresca', pro: 1.2, cho: 23.0, fat: 0.3 },
+      { id: 'olio', nome: 'Olio extravergine d\'oliva', pro: 0.0, cho: 0.0, fat: 100.0 },
+      { id: 'latte', nome: 'Latte intero', pro: 3.3, cho: 4.7, fat: 3.6 },
+      { id: 'yogurt', nome: 'Yogurt greco / bianco', pro: 10.0, cho: 4.0, fat: 0.4 },
+      { id: 'bresaola', nome: 'Bresaola / Fesa di tacchino', pro: 32.0, cho: 0.0, fat: 2.0 },
+      { id: 'mandorle', nome: 'Mandorle / Noci / Frutta secca', pro: 21.0, cho: 6.0, fat: 53.0 },
+      { id: 'miele', nome: 'Miele / Marmellata', pro: 0.3, cho: 80.0, fat: 0.0 },
+      { id: 'gallette', nome: 'Gallette di riso / mais', pro: 8.0, cho: 80.0, fat: 2.5 }
+    ];
+
+    const DEFAULT_PRESETS = [
+      // Pasti Off-Grid richiesti
+      { id: 'offgrid_nonna', nome: 'Nonna Standard', kcal: 960, pro: 40, cho: 110, fat: 40, isOffGrid: true },
+      { id: 'offgrid_genitori', nome: 'Genitori Standard', kcal: 835, pro: 40, cho: 90, fat: 35, isOffGrid: true },
+      // Preset Lunchbox / Classici
+      { id: 'lunchbox_riso_pollo', nome: 'Schiscetta Riso & Pollo', items: [{ foodId: 'riso', grams: 150 }, { foodId: 'pollo', grams: 150 }, { foodId: 'olio', grams: 10 }, { foodId: 'banana', grams: 120 }] },
+      { id: 'lunchbox_piadine', nome: 'Schiscetta 2 Piadine & Bresaola', items: [{ foodId: 'pane', grams: 180 }, { foodId: 'bresaola', grams: 100 }, { foodId: 'olio', grams: 10 }] },
+      { id: 'colazione_avena_whey', nome: 'Colazione Avena & Whey', items: [{ foodId: 'avena', grams: 80 }, { foodId: 'whey', grams: 40 }, { foodId: 'banana', grams: 120 }] },
+      { id: 'spuntino_gallette_tonno', nome: 'Spuntino Gallette & Tonno', items: [{ foodId: 'gallette', grams: 80 }, { foodId: 'tonno', grams: 112 }, { foodId: 'mandorle', grams: 20 }] }
+    ];
+
+    const MEAL_SLOTS = [
+      { id: 'colazione', title: 'Colazione' },
+      { id: 'spuntino1', title: 'Spuntino 1 (Post-Pesi)' },
+      { id: 'pranzo', title: 'Pranzo (Casa / Schiscetta)', allowOffGrid: true },
+      { id: 'spuntino2', title: 'Spuntino 2 (Pomeriggio)' },
+      { id: 'cena', title: 'Cena', allowOffGrid: true }
+    ];
+
+    /* ==========================================================================
+       2. STATO APPLICATIVO & STORAGE
+       ========================================================================== */
+    let currentDate = new Date().toISOString().split('T')[0];
+    let currentTab = 'today';
+    let historyRange = 7;
+    let appData = {
+      days: {}, // { "YYYY-MM-DD": { activity: "studio", meals: { colazione: [...], ... } } }
+      foods: JSON.parse(JSON.stringify(DEFAULT_FOODS)),
+      presets: JSON.parse(JSON.stringify(DEFAULT_PRESETS)),
+      sync: { token: '', gistId: '', auto: false }
+    };
+
+    function initApp() {
+      loadFromLocalStorage();
+      document.getElementById('current-date-picker').value = currentDate;
+      ensureDayExists(currentDate);
+      renderAll();
+      setupAutoSyncListener();
+    }
+
+    function loadFromLocalStorage() {
+      const saved = localStorage.getItem('macrolab_elite_data');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          appData.days = parsed.days || {};
+          if (parsed.foods) appData.foods = parsed.foods;
+          if (parsed.presets) appData.presets = parsed.presets;
+          if (parsed.sync) appData.sync = parsed.sync;
+        } catch(e) { console.error('Errore parsing storage', e); }
+      }
+      document.getElementById('sync-token').value = appData.sync.token || '';
+      document.getElementById('sync-gist-id').value = appData.sync.gistId || '';
+      document.getElementById('sync-auto').checked = appData.sync.auto || false;
+    }
+
+    function saveToLocalStorage(triggerSync = true) {
+      localStorage.setItem('macrolab_elite_data', JSON.stringify(appData));
+      renderAll();
+      if (triggerSync && appData.sync.auto && appData.sync.token && appData.sync.gistId) {
+        cloudPush(true);
+      }
+    }
+
+    function ensureDayExists(dateStr) {
+      if (!appData.days[dateStr]) {
+        appData.days[dateStr] = {
+          activity: 'studio',
+          meals: { colazione: [], spuntino1: [], pranzo: [], spuntino2: [], cena: [] }
         };
+      }
+    }
 
-        const MEAL_BLOCKS = ['Colazione', 'Spuntino 1', 'Pranzo', 'Spuntino 2', 'Cena'];
+    /* ==========================================================================
+       3. MOTORE MATEMATICO & TELEMETRIA
+       ========================================================================== */
+    const USER_METRICS = { weight: 76, height: 180, age: 20 };
+    // Mifflin-St Jeor BMR = (10 * 76) + (6.25 * 180) - (5 * 20) + 5 = 1790
+    const BMR = (10 * USER_METRICS.weight) + (6.25 * USER_METRICS.height) - (5 * USER_METRICS.age) + 5;
+    const NEAT_BASE = 450;
 
-        // --- DATABASE ALIMENTI (40+ alimenti base) ---
-        let foodDatabase = [
-            { id: 'riso', name: 'Riso basmati (crudo)', c: 78, p: 7, f: 0.6, kcal: 350 },
-            { id: 'pasta', name: 'Pasta di semola (cruda)', c: 75, p: 12, f: 1.5, kcal: 360 },
-            { id: 'pollo', name: 'Petto di pollo / tacchino', c: 0, p: 23, f: 1.2, kcal: 105 },
-            { id: 'uova', name: 'Uova intere (circa 2 medie)', c: 0.7, p: 12.5, f: 11, kcal: 143 },
-            { id: 'albumi', name: 'Albumi d’uovo', c: 0.7, p: 11, f: 0.2, kcal: 52 },
-            { id: 'tonno', name: 'Tonno al naturale (sgocciolato)', c: 0, p: 25, f: 0.8, kcal: 103 },
-            { id: 'salmone', name: 'Salmone affumicato', c: 0, p: 18, f: 12, kcal: 179 },
-            { id: 'bresaola', name: 'Fesa di tacchino / Bresaola', c: 0, p: 32, f: 2, kcal: 146 },
-            { id: 'avena', name: 'Farina / Fiocchi d’avena', c: 60, p: 13.5, f: 7, k: 389, kcal: 375 },
-            { id: 'pane', name: 'Pane bianco / integrale', c: 50, p: 8, f: 1.5, kcal: 250 },
-            { id: 'gallette', name: 'Gallette di riso / farro', c: 80, p: 8, f: 2, kcal: 380 },
-            { id: 'fette', name: 'Fette biscottate', c: 75, p: 10, f: 3, kcal: 380 },
-            { id: 'banana', name: 'Banana matura', c: 23, p: 1.2, f: 0.3, kcal: 89 },
-            { id: 'mela', name: 'Mela / Frutta fresca', c: 12, p: 0.3, f: 0.2, kcal: 52 },
-            { id: 'olio', name: 'Olio extravergine d’oliva', c: 0, p: 0, f: 100, kcal: 900 },
-            { id: 'burro_arachidi', name: 'Burro di arachidi 100%', c: 16, p: 25, f: 50, kcal: 588 },
-            { id: 'mandorle', name: 'Mandorle / Noci secche', c: 6, p: 21, f: 53, kcal: 597 },
-            { id: 'parmigiano', name: 'Parmigiano Reggiano / Grana', c: 0, p: 33, f: 28, kcal: 402 },
-            { id: 'yogurt', name: 'Yogurt greco 0% / bianco', c: 4, p: 10, f: 0.4, kcal: 57 },
-            { id: 'latte', name: 'Latte intero / parz. scremato', c: 5, p: 3.4, f: 3.5, kcal: 63 },
-            { id: 'whey', name: 'Proteine Whey in polvere', c: 5, p: 80, f: 3, kcal: 375 },
-            { id: 'miele', name: 'Miele / Marmellata', c: 80, p: 0.3, f: 0, kcal: 304 },
-            { id: 'piadina', name: 'Piadina romagnola', c: 52, p: 7.5, f: 12, kcal: 350 },
-            { id: 'philadelphia', name: 'Formaggio spalmabile light', c: 4, p: 8, f: 12, kcal: 150 },
-            { id: 'succo', name: 'Succo di frutta', c: 12, p: 0.1, f: 0.1, kcal: 50 }
-        ];
+    const ACTIVITY_KCAL = {
+      studio: 300,
+      corsa: 700,
+      calcio: 900,
+      partita: 750,
+      nuoto: 400
+    };
 
-        // --- PRESET OFF-GRID (RICHIESTI) ---
-        const OFFGRID_PRESETS = [
-            { id: "offgrid_nonna", nome: "Nonna Standard", kcal: 1000, pro: 35, cho: 110, fat: 45 },
-            { id: "offgrid_genitori", nome: "Genitori Standard", kcal: 750, p: 35, cho: 80, fat: 30 }, // Mappato pro/p coerente
-            { id: "offgrid_leggero", nome: "Pasto Leggero", kcal: 500, pro: 40, cho: 20, fat: 25 }
-        ];
+    function calculateDayTargets(dateStr) {
+      ensureDayExists(dateStr);
+      const day = appData.days[dateStr];
+      const actKcal = ACTIVITY_KCAL[day.activity] || 300;
+      const tdee = BMR + NEAT_BASE + actKcal;
+      const targetKcal = tdee + 350; // Lean Bulk
+      const targetPro = 170; // Fisso 2.2g/kg
+      const targetFat = 80;  // Fisso ~1g/kg
+      // Il resto in carboidrati ((TargetKcal - (170*4 + 80*9)) / 4)
+      const targetCho = Math.round((targetKcal - (targetPro * 4 + targetFat * 9)) / 4);
 
-        // --- PRESET PASTI DA FILE ALIMENTAZIONE ---
-        let mealPresets = {
-            "Colazione": [
-                { name: "Avena & Whey", items: [{id:'avena', grams:80}, {id:'whey', grams:40}, {id:'banana', grams:120}] },
-                { name: "Uova & Latte", items: [{id:'uova', grams:150}, {id:'pane', grams:100}, {id:'latte', grams:250}, {id:'miele', grams:30}, {id:'mela', grams:120}] }
-            ],
-            "Spuntino 1": [
-                { name: "Pane & Bresaola", items: [{id:'pane', grams:100}, {id:'bresaola', grams:70}, {id:'mandorle', grams:20}] },
-                { name: "Gallette & Tonno", items: [{id:'gallette', grams:80}, {id:'tonno', grams:112}, {id:'mandorle', grams:20}] }
-            ],
-            "Pranzo": [
-                { name: "Riso & Pollo (Casa)", items: [{id:'riso', grams:150}, {id:'pollo', grams:150}, {id:'olio', grams:10}, {id:'mela', grams:120}] },
-                { name: "Piadine Schiscetta", items: [{id:'piadina', grams:240}, {id:'bresaola', grams:120}, {id:'parmigiano', grams:20}, {id:'olio', grams:10}] }
-            ],
-            "Spuntino 2": [
-                { name: "Yogurt & Noci", items: [{id:'yogurt', grams:150}, {id:'mela', grams:120}, {id:'mandorle', grams:20}] },
-                { name: "Whey & Gallette", items: [{id:'whey', grams:40}, {id:'gallette', grams:50}, {id:'miele', grams:20}] }
-            ],
-            "Cena": [
-                { name: "Pasta & Secondo", items: [{id:'pasta', grams:150}, {id:'pollo', grams:150}, {id:'olio', grams:10}, {id:'mela', grams:120}] }
-            ]
-        };
+      return { tdee, targetKcal, targetPro, targetCho, targetFat };
+    }
 
-        // --- APP STATE ---
-        let currentDate = new Date().toISOString().split('T')[0];
-        let currentDayOfWeek = getDayName(currentDate);
-        let dailyLogs = JSON.parse(localStorage.getItem('macrolab_logs') || '{}');
-        let currentActiveMealBlock = null;
+    function calculateDayTotals(dateStr) {
+      ensureDayExists(dateStr);
+      const meals = appData.days[dateStr].meals;
+      let totKcal = 0, totPro = 0, totCho = 0, totFat = 0;
 
-        // --- INIT ---
-        window.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('date-picker').value = currentDate;
-            document.getElementById('day-selector').value = currentDayOfWeek;
-            
-            document.getElementById('day-selector').addEventListener('change', (e) => {
-                currentDayOfWeek = e.target.value;
-                updateTelemetry();
+      Object.values(meals).forEach(mealList => {
+        mealList.forEach(item => {
+          if (item.isOffGrid) {
+            totKcal += item.kcal || 0;
+            totPro += item.pro || 0;
+            totCho += item.cho || 0;
+            totFat += item.fat || 0;
+          } else if (item.items) {
+            // Preset / Lunchbox espanso
+            item.items.forEach(sub => {
+              const f = appData.foods.find(x => x.id === sub.foodId);
+              if (f) {
+                const ratio = sub.grams / 100;
+                const p = f.pro * ratio;
+                const c = f.cho * ratio;
+                const ft = f.fat * ratio;
+                totPro += p;
+                totCho += c;
+                totFat += ft;
+                totKcal += (p * 4) + (c * 4) + (ft * 9);
+              }
             });
-
-            loadSyncConfig();
-            renderTodayView();
-            renderPlanView();
-            renderPresetsView();
-            updateTelemetry();
-
-            if(document.getElementById('sync-auto').checked && localStorage.getItem('macrolab_token')) {
-                pullFromGist(true);
+          } else if (item.foodId) {
+            // Alimento singolo
+            const f = appData.foods.find(x => x.id === item.foodId);
+            if (f) {
+              const ratio = item.grams / 100;
+              const p = f.pro * ratio;
+              const c = f.cho * ratio;
+              const ft = f.fat * ratio;
+              totPro += p;
+              totCho += c;
+              totFat += ft;
+              totKcal += (p * 4) + (c * 4) + (ft * 9);
             }
+          }
+        });
+      });
+
+      return {
+        kcal: Math.round(totKcal),
+        pro: Math.round(totPro * 10) / 10,
+        cho: Math.round(totCho * 10) / 10,
+        fat: Math.round(totFat * 10) / 10
+      };
+    }
+
+    /* ==========================================================================
+       4. UI RENDERING & DASHBOARD
+       ========================================================================== */
+    function renderAll() {
+      renderDashboard();
+      renderTodayMeals();
+      renderPresetsTab();
+      renderHistoryTab();
+    }
+
+    function renderDashboard() {
+      ensureDayExists(currentDate);
+      const day = appData.days[currentDate];
+      document.getElementById('activity-preset').value = day.activity;
+
+      const targets = calculateDayTargets(currentDate);
+      const totals = calculateDayTotals(currentDate);
+
+      // Calorie Bar
+      const calPercent = Math.min(100, Math.round((totals.kcal / targets.targetKcal) * 100));
+      document.getElementById('cal-text').innerText = `${totals.kcal} / ${targets.targetKcal} kcal`;
+      document.getElementById('cal-bar').style.width = `${calPercent}%`;
+
+      // Proteine Bar
+      const proPercent = Math.min(100, Math.round((totals.pro / targets.targetPro) * 100));
+      document.getElementById('pro-text').innerText = `${totals.pro} / ${targets.targetPro}g`;
+      document.getElementById('pro-bar').style.width = `${proPercent}%`;
+
+      // Carboidrati Bar
+      const choPercent = Math.min(100, Math.round((totals.cho / targets.targetCho) * 100));
+      document.getElementById('cho-text').innerText = `${totals.cho} / ${targets.targetCho}g`;
+      document.getElementById('cho-bar').style.width = `${choPercent}%`;
+
+      // Grassi Bar
+      const fatPercent = Math.min(100, Math.round((totals.fat / targets.targetFat) * 100));
+      document.getElementById('fat-text').innerText = `${totals.fat} / ${targets.targetFat}g`;
+      document.getElementById('fat-bar').style.width = `${fatPercent}%`;
+    }
+
+    function renderTodayMeals() {
+      ensureDayExists(currentDate);
+      const day = appData.days[currentDate];
+      const container = document.getElementById('meal-blocks-container');
+      container.innerHTML = '';
+
+      MEAL_SLOTS.forEach(slot => {
+        const mealItems = day.meals[slot.id] || [];
+        let mealKcal = 0, mealPro = 0, mealCho = 0, mealFat = 0;
+
+        mealItems.forEach(item => {
+          if (item.isOffGrid) {
+            mealKcal += item.kcal || 0;
+            mealPro += item.pro || 0;
+            mealCho += item.cho || 0;
+            mealFat += item.fat || 0;
+          } else if (item.items) {
+            item.items.forEach(sub => {
+              const f = appData.foods.find(x => x.id === sub.foodId);
+              if (f) {
+                const ratio = sub.grams / 100;
+                const p = f.pro * ratio;
+                const c = f.cho * ratio;
+                const ft = f.fat * ratio;
+                mealPro += p; mealCho += c; mealFat += ft;
+                mealKcal += (p * 4) + (c * 4) + (ft * 9);
+              }
+            });
+          } else if (item.foodId) {
+            const f = appData.foods.find(x => x.id === item.foodId);
+            if (f) {
+              const ratio = item.grams / 100;
+              const p = f.pro * ratio;
+              const c = f.cho * ratio;
+              const ft = f.fat * ratio;
+              mealPro += p; mealCho += c; mealFat += ft;
+              mealKcal += (p * 4) + (c * 4) + (ft * 9);
+            }
+          }
         });
 
-        function getDayName(dateStr) {
-            const days = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'];
-            const d = new Date(dateStr);
-            return days[d.getDay()];
-        }
-
-        function changeDate(delta) {
-            let d = new Date(currentDate);
-            d.setDate(d.getDate() + delta);
-            currentDate = d.toISOString().split('T')[0];
-            document.getElementById('date-picker').value = currentDate;
-            currentDayOfWeek = getDayName(currentDate);
-            document.getElementById('day-selector').value = currentDayOfWeek;
-            renderTodayView();
-            updateTelemetry();
-        }
-
-        function onDateChange(val) {
-            currentDate = val;
-            currentDayOfWeek = getDayName(currentDate);
-            document.getElementById('day-selector').value = currentDayOfWeek;
-            renderTodayView();
-            updateTelemetry();
-        }
-
-        function switchTab(tabId) {
-            ['today', 'plan', 'presets', 'sync'].forEach(t => {
-                document.getElementById(`view-${t}`).classList.add('hidden');
-                document.getElementById(`tab-${t}`).className = "flex-1 py-2 text-center rounded-lg text-gray-400 hover:text-white transition";
-            });
-            document.getElementById(`view-${tabId}`).classList.remove('hidden');
-            document.getElementById(`tab-${tabId}`).className = "flex-1 py-2 text-center rounded-lg bg-emerald-600 text-white transition";
-        }
-
-        // --- CORE MATH & TELEMETRY ---
-        function getDailyTargets() {
-            const addKcal = ACTIVITY_ADDITIONS[currentDayOfWeek] || 300;
-            const tdee = BMR + NEAT_BASE + addKcal;
-            const targetKcal = tdee + 350; // Lean Bulk
-            const proKcal = FIXED_PROTEIN * 4;
-            const fatKcal = FIXED_FAT * 9;
-            const choKcal = Math.max(0, targetKcal - (proKcal + fatKcal));
-            const targetCho = Math.round(choKcal / 4);
-
-            return {
-                kcal: Math.round(targetKcal),
-                pro: FIXED_PROTEIN,
-                cho: targetCho,
-                fat: FIXED_FAT
-            };
-        }
-
-        function getDayData() {
-            if (!dailyLogs[currentDate]) {
-                dailyLogs[currentDate] = {
-                    meals: { 'Colazione': [], 'Spuntino 1': [], 'Pranzo': [], 'Spuntino 2': [], 'Cena': [] }
-                };
-            }
-            return dailyLogs[currentDate];
-        }
-
-        function updateTelemetry() {
-            const targets = getDailyTargets();
-            const data = getDayData();
-
-            let totKcal = 0, totPro = 0, totCho = 0, totFat = 0;
-
-            MEAL_BLOCKS.forEach(block => {
-                (data.meals[block] || []).forEach(item => {
-                    totKcal += item.kcal || 0;
-                    totPro += item.p || 0;
-                    totCho += item.c || 0;
-                    totFat += item.f || 0;
-                });
-            });
-
-            document.getElementById('current-day-label').innerText = `${currentDayOfWeek.toUpperCase()} • TDEE + 350 Kcal`;
-            
-            // Text values
-            document.getElementById('bar-kcal-text').innerText = `${Math.round(totKcal)} / ${targets.kcal}`;
-            document.getElementById('bar-pro-text').innerText = `${Math.round(totPro)}g / ${targets.pro}g`;
-            document.getElementById('bar-cho-text').innerText = `${Math.round(totCho)}g / ${targets.cho}g`;
-            document.getElementById('bar-fat-text').innerText = `${Math.round(totFat)}g / ${targets.fat}g`;
-
-            // Progress widths
-            document.getElementById('bar-kcal').style.width = `${Math.min(100, (totKcal / targets.kcal) * 100)}%`;
-            document.getElementById('bar-pro').style.width = `${Math.min(100, (totPro / targets.pro) * 100)}%`;
-            document.getElementById('bar-cho').style.width = `${Math.min(100, (totCho / targets.cho) * 100)}%`;
-            document.getElementById('bar-fat').style.width = `${Math.min(100, (totFat / targets.fat) * 100)}%`;
-        }
-
-        // --- RENDER TODAY VIEW ---
-        function renderTodayView() {
-            const container = document.getElementById('meals-container');
-            const data = getDayData();
-            container.innerHTML = '';
-
-            MEAL_BLOCKS.forEach(block => {
-                const items = data.meals[block] || [];
-                let bKcal = 0, bPro = 0, bCho = 0, bFat = 0;
-                items.forEach(i => { bKcal += i.kcal||0; bPro += i.p||0; bCho += i.c||0; bFat += i.f||0; });
-
-                const card = document.createElement('div');
-                card.className = "bg-dark-800 border border-dark-700 rounded-xl p-3.5 space-y-2.5";
-                
-                let html = `
-                    <div class="flex justify-between items-center">
-                        <h3 class="font-bold text-sm text-gray-200">${block}</h3>
-                        <div class="text-xs text-gray-400 font-mono">${Math.round(bKcal)} kcal | P:${Math.round(bPro)} C:${Math.round(bCho)} F:${Math.round(bFat)}</div>
-                    </div>
-                    <div class="space-y-1.5 divide-y divide-dark-700/40">
-                `;
-
-                if (items.length === 0) {
-                    html += `<p class="text-xs text-gray-500 italic py-1">Nessun alimento inserito</p>`;
-                } else {
-                    items.forEach((item, idx) => {
-                        html += `
-                            <div class="flex justify-between items-center pt-1.5 text-xs">
-                                <div>
-                                    <span class="text-gray-200 font-medium">${item.name}</span>
-                                    <span class="text-gray-400 ml-1">(${item.grams ? item.grams + 'g' : 'Off-Grid'})</span>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-gray-400 font-mono">${Math.round(item.kcal)} kcal</span>
-                                    ${item.grams ? `
-                                    <button onclick="adjustGrams('${block}', ${idx}, -10)" class="px-1.5 py-0.5 bg-dark-700 hover:bg-dark-600 rounded text-gray-300">-10</button>
-                                    <button onclick="adjustGrams('${block}', ${idx}, 10)" class="px-1.5 py-0.5 bg-dark-700 hover:bg-dark-600 rounded text-gray-300">+10</button>
-                                    ` : ''}
-                                    <button onclick="removeMealItem('${block}', ${idx})" class="text-rose-400 hover:text-rose-300 font-bold px-1">&times;</button>
-                                </div>
-                            </div>
-                        `;
-                    });
-                }
-
-                html += `</div>`;
-
-                // Pulsanti azione blocco (Aggiungi + 3 Quick Off-Grid Buttons)
-                html += `
-                    <div class="pt-2 flex flex-wrap gap-1.5 items-center justify-between border-t border-dark-700">
-                        <button onclick="openFoodModal('${block}')" class="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 rounded-lg text-xs font-medium transition">+ Aggiungi Alimento</button>
-                        
-                        <!-- Quick Off-Grid Buttons (Pranzo / Cena o qualsiasi blocco) -->
-                        <div class="flex space-x-1">
-                            <button onclick="applyOffGridPreset('${block}', 'offgrid_nonna')" title="Nonna Standard (1000 kcal)" class="px-2 py-1 bg-dark-700 hover:bg-dark-600 text-amber-400 rounded text-[11px] flex items-center space-x-1">⚡ Nonna</button>
-                            <button onclick="applyOffGridPreset('${block}', 'offgrid_genitori')" title="Genitori Standard (750 kcal)" class="px-2 py-1 bg-dark-700 hover:bg-dark-600 text-amber-400 rounded text-[11px] flex items-center space-x-1">⚡ Genitori</button>
-                            <button onclick="applyOffGridPreset('${block}', 'offgrid_leggero')" title="Pasto Leggero (500 kcal)" class="px-2 py-1 bg-dark-700 hover:bg-dark-600 text-amber-400 rounded text-[11px] flex items-center space-x-1">⚡ Leggero</button>
-                        </div>
-                    </div>
-                `;
-
-                card.innerHTML = html;
-                container.appendChild(card);
-            });
-        }
-
-        // --- OFF-GRID LOGIC ---
-        function applyOffGridPreset(block, presetId) {
-            const preset = OFFGRID_PRESETS.find(p => p.id === presetId);
-            if (!preset) return;
-
-            const data = getDayData();
-            if (!data.meals[block]) data.meals[block] = [];
-
-            data.meals[block].push({
-                name: `[Off-Grid] ${preset.nome}`,
-                grams: 0,
-                c: preset.cho,
-                p: preset.pro,
-                f: preset.fat,
-                kcal: preset.kcal
-            });
-
-            saveAndSync();
-            renderTodayView();
-            updateTelemetry();
-        }
-
-        // --- FOOD MODAL & DATABASE ---
-        function openFoodModal(block) {
-            currentActiveMealBlock = block;
-            document.getElementById('modal-title').innerText = `Aggiungi a ${block}`;
-            document.getElementById('food-search').value = '';
-            document.getElementById('food-grams').value = '100';
-            renderFoodDatabaseList();
-            document.getElementById('food-modal').classList.remove('hidden');
-        }
-
-        function closeFoodModal() {
-            document.getElementById('food-modal').classList.add('hidden');
-            currentActiveMealBlock = null;
-        }
-
-        function filterFoodDatabase() {
-            renderFoodDatabaseList();
-        }
-
-        function renderFoodDatabaseList() {
-            const query = document.getElementById('food-search').value.toLowerCase();
-            const container = document.getElementById('food-list-container');
-            container.innerHTML = '';
-
-            const filtered = foodDatabase.filter(f => f.name.toLowerCase().includes(query));
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<p class="text-xs text-gray-500 text-center py-4">Nessun alimento trovato</p>`;
-                return;
-            }
-
-            filtered.forEach(food => {
-                const row = document.createElement('div');
-                row.className = "py-2 flex justify-between items-center text-xs";
-                row.innerHTML = `
-                    <div>
-                        <div class="font-medium text-gray-200">${food.name}</div>
-                        <div class="text-gray-400 text-[11px]">P:${food.p}g | C:${food.c}g | F:${food.f}g (${food.kcal} kcal / 100g)</div>
-                    </div>
-                    <button onclick="addFoodToActiveMeal('${food.id}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-medium">Aggiungi</button>
-                `;
-                container.appendChild(row);
-            });
-        }
-
-        function addFoodToActiveMeal(foodId) {
-            const food = foodDatabase.find(f => f.id === foodId);
-            const grams = parseFloat(document.getElementById('food-grams').value) || 100;
-            if (!food || !currentActiveMealBlock) return;
-
-            const factor = grams / 100;
-            const item = {
-                id: food.id,
-                name: food.name,
-                grams: grams,
-                c: Number((food.c * factor).toFixed(1)),
-                p: Number((food.p * factor).toFixed(1)),
-                f: Number((food.f * factor).toFixed(1)),
-                kcal: Number((food.kcal * factor).toFixed(1))
-            };
-
-            const data = getDayData();
-            if (!data.meals[currentActiveMealBlock]) data.meals[currentActiveMealBlock] = [];
-            data.meals[currentActiveMealBlock].push(item);
-
-            saveAndSync();
-            renderTodayView();
-            updateTelemetry();
-            closeFoodModal();
-        }
-
-        function removeMealItem(block, idx) {
-            const data = getDayData();
-            data.meals[block].splice(idx, 1);
-            saveAndSync();
-            renderTodayView();
-            updateTelemetry();
-        }
-
-        function adjustGrams(block, idx, delta) {
-            const data = getDayData();
-            const item = data.meals[block][idx];
-            if (!item || !item.grams) return;
-
-            let newGrams = item.grams + delta;
-            if (newGrams < 10) newGrams = 10;
-
-            const food = foodDatabase.find(f => f.id === item.id);
-            if (!food) return;
-
-            const factor = newGrams / 100;
-            item.grams = newGrams;
-            item.c = Number((food.c * factor).toFixed(1));
-            item.p = Number((food.p * factor).toFixed(1));
-            item.f = Number((food.f * factor).toFixed(1));
-            item.kcal = Number((food.kcal * factor).toFixed(1));
-
-            saveAndSync();
-            renderTodayView();
-            updateTelemetry();
-        }
-
-        function copyFromYesterday() {
-            let d = new Date(currentDate);
-            d.setDate(d.getDate() - 1);
-            const prevDateStr = d.toISOString().split('T')[0];
-            if (dailyLogs[prevDateStr]) {
-                dailyLogs[currentDate] = JSON.parse(JSON.stringify(dailyLogs[prevDateStr]));
-                saveAndSync();
-                renderTodayView();
-                updateTelemetry();
+        const blockEl = document.createElement('div');
+        blockEl.className = 'bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3';
+        
+        let htmlItems = '';
+        if (mealItems.length === 0) {
+          htmlItems = `<p class="text-xs text-slate-500 italic py-1">Nessun alimento inserito in questo pasto.</p>`;
+        } else {
+          mealItems.forEach((item, idx) => {
+            if (item.isOffGrid) {
+              htmlItems += `
+                <div class="flex items-center justify-between bg-slate-950/60 px-3 py-2 rounded-xl border border-slate-800 text-xs">
+                  <div>
+                    <span class="font-bold text-amber-300">⚡ [Off-Grid] ${item.nome}</span>
+                    <span class="text-slate-400 block text-[10px]">${item.kcal} kcal | P: ${item.pro}g | C: ${item.cho}g | F: ${item.fat}g</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <button onclick="openEditOffGridModal('${slot.id}', ${idx})" class="p-1 hover:bg-slate-800 text-slate-400 hover:text-blue-300 rounded transition" title="Modifica Macro">✏️</button>
+                    <button onclick="removeMealItem('${slot.id}', ${idx})" class="p-1 hover:bg-slate-800 text-slate-400 hover:text-rose-400 rounded transition" title="Elimina">✕</button>
+                  </div>
+                </div>`;
+            } else if (item.items) {
+              // Preset espanso
+              const desc = item.items.map(sub => {
+                const f = appData.foods.find(x => x.id === sub.foodId);
+                return `${sub.grams}g ${f ? f.nome : sub.foodId}`;
+              }).join(', ');
+              htmlItems += `
+                <div class="flex items-center justify-between bg-slate-950/60 px-3 py-2 rounded-xl border border-slate-800 text-xs">
+                  <div>
+                    <span class="font-bold text-blue-300">🍱 ${item.nome || 'Preset'}</span>
+                    <span class="text-slate-400 block text-[10px] truncate max-w-[240px]">${desc}</span>
+                  </div>
+                  <button onclick="removeMealItem('${slot.id}', ${idx})" class="p-1 hover:bg-slate-800 text-slate-400 hover:text-rose-400 rounded transition">✕</button>
+                </div>`;
             } else {
-                alert("Nessun dato registrato nella giornata di ieri.");
-            }
-        }
-
-        function loadMealPlanForDay() {
-            // Carica preset standard del giorno
-            const data = getDayData();
-            if (mealPresets["Colazione"] && mealPresets["Pranzo"] && mealPresets["Cena"]) {
-                // Esempio caricamento rapido primo preset colazione e pranzo
-                if(mealPresets["Colazione"][0]) applyPresetToBlock('Colazione', mealPresets["Colazione"][0]);
-                if(mealPresets["Pranzo"][0]) applyPresetToBlock('Pranzo', mealPresets["Pranzo"][0]);
-                if(mealPresets["Cena"][0]) applyPresetToBlock('Cena', mealPresets["Cena"][0]);
-                saveAndSync();
-                renderTodayView();
-                updateTelemetry();
-            }
-        }
-
-        function applyPresetToBlock(block, preset) {
-            const data = getDayData();
-            data.meals[block] = [];
-            preset.items.forEach(pi => {
-                const food = foodDatabase.find(f => f.id === pi.id);
-                if (food) {
-                    const factor = pi.grams / 100;
-                    data.meals[block].push({
-                        id: food.id,
-                        name: food.name,
-                        grams: pi.grams,
-                        c: Number((food.c * factor).toFixed(1)),
-                        p: Number((food.p * factor).toFixed(1)),
-                        f: Number((food.f * factor).toFixed(1)),
-                        kcal: Number((food.kcal * factor).toFixed(1))
-                    });
-                }
-            });
-        }
-
-        // --- RENDER PLAN & PRESETS ---
-        function renderPlanView() {
-            const container = document.getElementById('plan-container');
-            container.innerHTML = `<p class="text-gray-400">Tutti i 28 preset dal file Alimentazione sono integrati e attivi nei blocchi pasto.</p>`;
-        }
-
-        function renderPresetsView() {
-            // Render Off-Grid presets
-            const ogContainer = document.getElementById('offgrid-presets-list');
-            ogContainer.innerHTML = '';
-            OFFGRID_PRESETS.forEach(og => {
-                ogContainer.innerHTML += `
-                    <div class="bg-dark-900 border border-dark-700 rounded-lg p-2.5 flex justify-between items-center text-xs">
-                        <div>
-                            <div class="font-bold text-amber-400">${og.nome}</div>
-                            <div class="text-gray-400 text-[11px]">${og.kcal} kcal | P:${og.pro}g | C:${og.cho}g | F:${og.fat}g</div>
-                        </div>
+              const f = appData.foods.find(x => x.id === item.foodId);
+              const fName = f ? f.nome : 'Alimento';
+              htmlItems += `
+                <div class="flex items-center justify-between bg-slate-950/60 px-3 py-2 rounded-xl border border-slate-800 text-xs">
+                  <div>
+                    <span class="font-medium text-slate-200">${fName}</span>
+                    <span class="text-slate-400 block text-[10px]">${item.grams}g</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg p-0.5">
+                      <button onclick="adjustGrams('${slot.id}', ${idx}, -10)" class="px-1.5 py-0.5 text-[10px] hover:bg-slate-800 text-slate-300 rounded">-10</button>
+                      <button onclick="adjustGrams('${slot.id}', ${idx}, 10)" class="px-1.5 py-0.5 text-[10px] hover:bg-slate-800 text-slate-300 rounded">+10</button>
                     </div>
-                `;
-            });
-
-            // Render Custom Presets
-            const cpContainer = document.getElementById('custom-presets-list');
-            cpContainer.innerHTML = '';
-            Object.keys(mealPresets).forEach(block => {
-                mealPresets[block].forEach(p => {
-                    cpContainer.innerHTML += `
-                        <div class="bg-dark-900 border border-dark-700 rounded-lg p-2 flex justify-between items-center">
-                            <div><span class="text-emerald-400 font-semibold">[${block}]</span> <span class="text-gray-200">${p.name}</span></div>
-                        </div>
-                    `;
-                });
-            });
+                    <button onclick="removeMealItem('${slot.id}', ${idx})" class="p-1 hover:bg-slate-800 text-slate-400 hover:text-rose-400 rounded transition">✕</button>
+                  </div>
+                </div>`;
+            }
+          });
         }
 
-        // --- PERSISTENCE & GITHUB GIST SYNC ---
-        function saveAndSync() {
-            localStorage.setItem('macrolab_logs', JSON.stringify(dailyLogs));
-            triggerAutoSync();
+        // Se il pasto supporta Off-Grid (Pranzo o Cena), aggiungi i 2 Quick Button dedicati
+        let offGridButtonsHtml = '';
+        if (slot.allowOffGrid) {
+          offGridButtonsHtml = `
+            <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800/80">
+              <button onclick="applyOffGridPreset('${slot.id}', 'offgrid_nonna')" class="py-1.5 px-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5">
+                ⚡ Nonna Standard
+              </button>
+              <button onclick="applyOffGridPreset('${slot.id}', 'offgrid_genitori')" class="py-1.5 px-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5">
+                ⚡ Genitori Standard
+              </button>
+            </div>`;
         }
 
-        function loadSyncConfig() {
-            if(localStorage.getItem('macrolab_token')) document.getElementById('sync-token').value = localStorage.getItem('macrolab_token');
-            if(localStorage.getItem('macrolab_gist_id')) document.getElementById('sync-gist-id').value = localStorage.getItem('macrolab_gist_id');
-            if(localStorage.getItem('macrolab_auto_sync') !== null) document.getElementById('sync-auto').checked = localStorage.getItem('macrolab_auto_sync') === 'true';
+        blockEl.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-xs font-bold text-blue-400 uppercase tracking-wider">${slot.title}</h3>
+              <span class="text-[10px] text-slate-400 font-mono">${Math.round(mealKcal)} kcal | P: ${Math.round(mealPro)}g | C: ${Math.round(mealCho)}g | F: ${Math.round(mealFat)}g</span>
+            </div>
+            <div class="flex gap-1.5">
+              <button onclick="openAddFoodModal('${slot.id}')" class="px-2.5 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-xl text-xs font-medium transition">
+                + Alimento
+              </button>
+              <button onclick="openPresetModal('${slot.id}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition">
+                🍱 1-Tap
+              </button>
+            </div>
+          </div>
+          <div class="space-y-1.5 pt-1">
+            ${htmlItems}
+          </div>
+          ${offGridButtonsHtml}
+        `;
+
+        container.appendChild(blockEl);
+      });
+    }
+
+    function renderPresetsTab() {
+      const container = document.getElementById('presets-list-container');
+      container.innerHTML = '';
+
+      appData.presets.forEach((p, idx) => {
+        let desc = '';
+        if (p.isOffGrid) {
+          desc = `Off-Grid Preset | ${p.kcal} kcal | P: ${p.pro}g | C: ${p.cho}g | F: ${p.fat}g`;
+        } else if (p.items) {
+          desc = p.items.map(sub => {
+            const f = appData.foods.find(x => x.id === sub.foodId);
+            return `${sub.grams}g ${f ? f.nome : sub.foodId}`;
+          }).join(', ');
         }
 
-        function saveSyncConfigToStorage() {
-            localStorage.setItem('macrolab_token', document.getElementById('sync-token').value.trim());
-            localStorage.setItem('macrolab_gist_id', document.getElementById('sync-gist-id').value.trim());
-            localStorage.setItem('macrolab_auto_sync', document.getElementById('sync-auto').checked);
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-xs';
+        div.innerHTML = `
+          <div>
+            <span class="font-bold text-blue-300 block">${p.nome}</span>
+            <span class="text-slate-400 text-[10px] truncate max-w-[260px] block">${desc}</span>
+          </div>
+          <button onclick="deletePreset(${idx})" class="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-rose-400 rounded-lg transition">🗑️</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function renderHistoryTab() {
+      const container = document.getElementById('history-stats-container');
+      container.innerHTML = '';
+
+      // Calcola statistiche ultimi N giorni
+      let totalKcalDelta = 0;
+      let adherenceScores = [];
+
+      for (let i = 0; i < historyRange; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        
+        if (appData.days[dateStr]) {
+          const targets = calculateDayTargets(dateStr);
+          const totals = calculateDayTotals(dateStr);
+          const calRatio = Math.min(1.2, totals.kcal / targets.targetKcal);
+          const score = Math.round(calRatio * 100);
+          adherenceScores.push(score);
         }
+      }
 
-        function triggerAutoSync() {
-            saveSyncConfigToStorage();
-            if(!document.getElementById('sync-auto').checked) return;
-            const token = localStorage.getItem('macrolab_token');
-            const gistId = localStorage.getItem('macrolab_gist_id');
-            if(!token || !gistId) return;
+      const avgScore = adherenceScores.length > 0 ? Math.round(adherenceScores.reduce((a, b) => a + b, 0) / adherenceScores.length) : 0;
 
-            document.getElementById('sync-status').innerText = "SYNC...";
-            document.getElementById('sync-status').className = "text-xs px-2 py-1 rounded bg-dark-700 text-blue-400 font-mono";
+      container.innerHTML = `
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-center">
+            <span class="text-slate-400 text-[10px] uppercase font-semibold block">Precisione Media</span>
+            <span class="text-xl font-bold text-emerald-400 font-mono">${avgScore}%</span>
+          </div>
+          <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-center">
+            <span class="text-slate-400 text-[10px] uppercase font-semibold block">Giorni Tracciati</span>
+            <span class="text-xl font-bold text-blue-400 font-mono">${Object.keys(appData.days).length}</span>
+          </div>
+        </div>
+        <p class="text-[11px] text-slate-400 italic pt-2">L'indice di aderenza stima la vicinanza percentuale al target calorico Lean Bulk impostato per ciascun giorno attivo.</p>
+      `;
+    }
 
-            const payload = {
-                description: "MacroLab Hybrid Elite Sync Data",
-                files: {
-                    "macrolab_data.json": {
-                        content: JSON.stringify({ dailyLogs, foodDatabase, mealPresets }, null, 2)
-                    }
-                }
-            };
+    /* ==========================================================================
+       5. LOGICA INTERATTIVA & MODALI
+       ========================================================================== */
+    let currentModalContext = null;
 
-            fetch(`https://api.github.com/gists/${gistId}`, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': `token ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(res => {
-                if(res.ok) {
-                    document.getElementById('sync-status').innerText = "SYNCED";
-                    document.getElementById('sync-status').className = "text-xs px-2 py-1 rounded bg-dark-700 text-emerald-400 font-mono";
-                } else {
-                    throw new Error("Errore sync");
-                }
-            })
-            .catch(() => {
-                document.getElementById('sync-status').innerText = "OFFLINE SYNC";
-                document.getElementById('sync-status').className = "text-xs px-2 py-1 rounded bg-dark-700 text-yellow-400 font-mono";
-            });
+    function changeDayOffset(offset) {
+      const d = new Date(currentDate);
+      d.setDate(d.getDate() + offset);
+      currentDate = d.toISOString().split('T')[0];
+      document.getElementById('current-date-picker').value = currentDate;
+      ensureDayExists(currentDate);
+      renderAll();
+    }
+
+    function onDateChanged(val) {
+      if (val) {
+        currentDate = val;
+        ensureDayExists(currentDate);
+        renderAll();
+      }
+    }
+
+    function updateActivityPreset(val) {
+      ensureDayExists(currentDate);
+      appData.days[currentDate].activity = val;
+      saveToLocalStorage();
+    }
+
+    function switchTab(tabId) {
+      ['today', 'plan', 'presets', 'history', 'sync'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.add('hidden');
+        document.getElementById(`tab-${t}`).classList.remove('bg-slate-800', 'text-blue-400', 'font-semibold');
+        document.getElementById(`tab-${t}`).classList.add('text-slate-400');
+      });
+      document.getElementById(`view-${tabId}`).classList.remove('hidden');
+      document.getElementById(`tab-${tabId}`).classList.add('bg-slate-800', 'text-blue-400', 'font-semibold');
+      document.getElementById(`tab-${tabId}`).classList.remove('text-slate-400');
+      currentTab = tabId;
+      if (tabId === 'history') renderHistoryTab();
+    }
+
+    function applyOffGridPreset(mealId, presetId) {
+      ensureDayExists(currentDate);
+      const preset = appData.presets.find(p => p.id === presetId);
+      if (!preset) return;
+
+      appData.days[currentDate].meals[mealId].push({
+        isOffGrid: true,
+        nome: preset.nome,
+        kcal: preset.kcal,
+        pro: preset.pro,
+        cho: preset.cho,
+        fat: preset.fat
+      });
+      saveToLocalStorage();
+    }
+
+    function openEditOffGridModal(mealId, itemIdx) {
+      const item = appData.days[currentDate].meals[mealId][itemIdx];
+      currentModalContext = { type: 'edit_offgrid', mealId, itemIdx };
+
+      document.getElementById('modal-title').innerText = `Modifica Pasto Off-Grid: ${item.nome}`;
+      document.getElementById('modal-body').innerHTML = `
+        <div class="space-y-2">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Nome Pasto:</label>
+            <input type="text" id="og-name" value="${item.nome}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">Calorie (kcal):</label>
+              <input type="number" id="og-kcal" value="${item.kcal}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 font-mono">
+            </div>
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">Proteine (g):</label>
+              <input type="number" id="og-pro" value="${item.pro}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 font-mono">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">Carboidrati (g):</label>
+              <input type="number" id="og-cho" value="${item.cho}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 font-mono">
+            </div>
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">Grassi (g):</label>
+              <input type="number" id="og-fat" value="${item.fat}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 font-mono">
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById('modal-container').classList.remove('hidden');
+      document.getElementById('modal-container').classList.add('flex');
+    }
+
+    function openAddFoodModal(mealId) {
+      currentModalContext = { type: 'add_food', mealId };
+      const options = appData.foods.map(f => `<option value="${f.id}">${f.nome} (P:${f.pro} C:${f.cho} F:${f.fat} per 100g)</option>`).join('');
+
+      document.getElementById('modal-title').innerText = 'Aggiungi Alimento al Pasto';
+      document.getElementById('modal-body').innerHTML = `
+        <div class="space-y-2">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Seleziona Alimento:</label>
+            <select id="food-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200">${options}</select>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Quantità in Grammi:</label>
+            <input type="number" id="food-grams" value="100" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 font-mono">
+          </div>
+        </div>
+      `;
+      document.getElementById('modal-container').classList.remove('hidden');
+      document.getElementById('modal-container').classList.add('flex');
+    }
+
+    function openPresetModal(mealId) {
+      currentModalContext = { type: 'add_preset', mealId };
+      const options = appData.presets.filter(p => !p.isOffGrid).map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+
+      document.getElementById('modal-title').innerText = 'Seleziona Preset 1-Tap';
+      document.getElementById('modal-body').innerHTML = `
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Preset Disponibili:</label>
+          <select id="preset-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200">${options}</select>
+        </div>
+      `;
+      document.getElementById('modal-container').classList.remove('hidden');
+      document.getElementById('modal-container').classList.add('flex');
+    }
+
+    function closeModal() {
+      document.getElementById('modal-container').classList.add('hidden');
+      document.getElementById('modal-container').classList.remove('flex');
+      currentModalContext = null;
+    }
+
+    function submitModal() {
+      if (!currentModalContext) return;
+      ensureDayExists(currentDate);
+
+      if (currentModalContext.type === 'edit_offgrid') {
+        const { mealId, itemIdx } = currentModalContext;
+        const item = appData.days[currentDate].meals[mealId][itemIdx];
+        item.nome = document.getElementById('og-name').value || 'Pasto Off-Grid';
+        item.kcal = parseFloat(document.getElementById('og-kcal').value) || 0;
+        item.pro = parseFloat(document.getElementById('og-pro').value) || 0;
+        item.cho = parseFloat(document.getElementById('og-cho').value) || 0;
+        item.fat = parseFloat(document.getElementById('og-fat').value) || 0;
+        saveToLocalStorage();
+        closeModal();
+      } else if (currentModalContext.type === 'add_food') {
+        const foodId = document.getElementById('food-select').value;
+        const grams = parseFloat(document.getElementById('food-grams').value) || 0;
+        if (grams > 0) {
+          appData.days[currentDate].meals[currentModalContext.mealId].push({ foodId, grams });
+          saveToLocalStorage();
         }
-
-        function createGist() {
-            saveSyncConfigToStorage();
-            const token = document.getElementById('sync-token').value.trim();
-            if(!token) { alert("Inserisci prima il GitHub Token."); return; }
-
-            const payload = {
-                description: "MacroLab Hybrid Elite Database",
-                public: false,
-                files: {
-                    "macrolab_data.json": {
-                        content: JSON.stringify({ dailyLogs, foodDatabase, mealPresets }, null, 2)
-                    }
-                }
-            };
-
-            fetch('https://api.github.com/gists', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `token ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.id) {
-                    document.getElementById('sync-gist-id').value = data.id;
-                    saveSyncConfigToStorage();
-                    alert("Gist creato con successo e ID salvato!");
-                    triggerAutoSync();
-                } else {
-                    alert("Errore nella creazione del Gist. Verifica il Token.");
-                }
-            });
+        closeModal();
+      } else if (currentModalContext.type === 'add_preset') {
+        const presetId = document.getElementById('preset-select').value;
+        const preset = appData.presets.find(p => p.id === presetId);
+        if (preset && preset.items) {
+          appData.days[currentDate].meals[currentModalContext.mealId].push(JSON.parse(JSON.stringify(preset)));
+          saveToLocalStorage();
         }
+        closeModal();
+      }
+    }
 
-        function pullFromGist(silent = false) {
-            saveSyncConfigToStorage();
-            const token = localStorage.getItem('macrolab_token');
-            const gistId = localStorage.getItem('macrolab_gist_id');
-            if(!token || !gistId) return;
+    function removeMealItem(mealId, idx) {
+      ensureDayExists(currentDate);
+      appData.days[currentDate].meals[mealId].splice(idx, 1);
+      saveToLocalStorage();
+    }
 
-            fetch(`https://api.github.com/gists/${gistId}`, {
-                headers: { 'Authorization': `token ${token}` }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.files && data.files["macrolab_data.json"]) {
-                    const parsed = JSON.parse(data.files["macrolab_data.json"].content);
-                    if(parsed.dailyLogs) dailyLogs = parsed.dailyLogs;
-                    if(parsed.foodDatabase) foodDatabase = parsed.foodDatabase;
-                    if(parsed.mealPresets) mealPresets = parsed.mealPresets;
-                    localStorage.setItem('macrolab_logs', JSON.stringify(dailyLogs));
-                    renderTodayView();
-                    updateTelemetry();
-                    if(!silent) alert("Dati scaricati con successo dal Cloud!");
-                }
-            })
-            .catch(() => { if(!silent) alert("Impossibile connettersi al Cloud."); });
+    function adjustGrams(mealId, idx, delta) {
+      ensureDayExists(currentDate);
+      const item = appData.days[currentDate].meals[mealId][idx];
+      if (item && item.grams) {
+        item.grams = Math.max(10, item.grams + delta);
+        saveToLocalStorage();
+      }
+    }
+
+    function copyFromYesterday() {
+      const d = new Date(currentDate);
+      d.setDate(d.getDate() - 1);
+      const prevDateStr = d.toISOString().split('T')[0];
+      if (appData.days[prevDateStr]) {
+        appData.days[currentDate] = JSON.parse(JSON.stringify(appData.days[prevDateStr]));
+        saveToLocalStorage();
+        alert('Diario copiato con successo da ieri!');
+      } else {
+        alert('Nessun dato registrato nella giornata di ieri.');
+      }
+    }
+
+    function loadWeeklyPlan(dayKey) {
+      ensureDayExists(currentDate);
+      // Assegna preset tipici in base al giorno della settimana scelto
+      const planMap = {
+        lun: { activity: 'studio', preset: 'lunchbox_riso_pollo' },
+        mar: { activity: 'calcio', preset: 'lunchbox_piadine' },
+        mer: { activity: 'studio', preset: 'lunchbox_riso_pollo' },
+        gio: { activity: 'calcio', preset: 'lunchbox_piadine' },
+        ven: { activity: 'studio', preset: 'colazione_avena_whey' },
+        sab: { activity: 'nuoto', preset: 'lunchbox_riso_pollo' },
+        dom: { activity: 'partita', preset: 'lunchbox_riso_pollo' }
+      };
+
+      const plan = planMap[dayKey] || planMap.lun;
+      appData.days[currentDate].activity = plan.activity;
+      // Inserisce il preset standard a pranzo come esempio di giornata tipo
+      appData.days[currentDate].meals.pranzo = [JSON.parse(JSON.stringify(appData.presets.find(p => p.id === plan.preset) || appData.presets[2]))];
+      saveToLocalStorage();
+      switchTab('today');
+    }
+
+    function deletePreset(idx) {
+      appData.presets.splice(idx, 1);
+      saveToLocalStorage();
+    }
+
+    /* ==========================================================================
+       6. CLOUD SYNC & GITHUB GIST
+       ========================================================================== */
+    function toggleAutoSync(val) {
+      appData.sync.auto = val;
+      saveToLocalStorage(false);
+    }
+
+    async function createCloudGist() {
+      const token = document.getElementById('sync-token').value.trim();
+      if (!token) { alert('Inserisci prima il GitHub Token!'); return; }
+
+      try {
+        const res = await fetch('https://api.github.com/gists', {
+          method: 'POST',
+          headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            description: 'MacroLab Hybrid Elite Cloud Database',
+            public: false,
+            files: { 'macrolab_db.json': { content: JSON.stringify(appData) } }
+          })
+        });
+        const data = await res.json();
+        if (data.id) {
+          appData.sync.token = token;
+          appData.sync.gistId = data.id;
+          document.getElementById('sync-gist-id').value = data.id;
+          saveToLocalStorage(false);
+          alert('Gist cloud creato con successo!');
+        } else {
+          alert('Errore nella creazione del Gist. Verifica il token.');
         }
+      } catch(e) {
+        alert('Errore di connessione cloud.');
+      }
+    }
 
-        function pushToGist() {
-            triggerAutoSync();
-            alert("Push manuale eseguito!");
+    async function cloudPush(silent = false) {
+      const token = document.getElementById('sync-token').value.trim();
+      const gistId = document.getElementById('sync-gist-id').value.trim();
+      if (!token || !gistId) return;
+
+      appData.sync.token = token;
+      appData.sync.gistId = gistId;
+
+      try {
+        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            files: { 'macrolab_db.json': { content: JSON.stringify(appData) } }
+          })
+        });
+        if (res.ok && !silent) {
+          alert('Dati sincronizzati con successo sul Cloud!');
         }
-    </script>
+      } catch(e) {
+        if (!silent) console.error('Errore Push Cloud', e);
+      }
+    }
+
+    async function cloudPull() {
+      const token = document.getElementById('sync-token').value.trim();
+      const gistId = document.getElementById('sync-gist-id').value.trim();
+      if (!token || !gistId) { alert('Inserisci Token e Gist ID!'); return; }
+
+      try {
+        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+          headers: { 'Authorization': `token ${token}` }
+        });
+        const data = await res.json();
+        if (data.files && data.files['macrolab_db.json']) {
+          const remoteData = JSON.parse(data.files['macrolab_db.json'].content);
+          appData = remoteData;
+          appData.sync.token = token;
+          appData.sync.gistId = gistId;
+          saveToLocalStorage(false);
+          renderAll();
+          alert('Dati scaricati con successo dal Cloud!');
+        }
+      } catch(e) {
+        alert('Errore durante il download dal Cloud.');
+      }
+    }
+
+    function setupAutoSyncListener() {
+      // Autosync periodico se attivo
+      setInterval(() => {
+        if (appData.sync.auto && appData.sync.token && appData.sync.gistId) {
+          cloudPush(true);
+        }
+      }, 30000);
+    }
+
+    // Avvio applicazione al caricamento DOM
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
 </body>
 </html>
