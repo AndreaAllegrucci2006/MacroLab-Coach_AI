@@ -1143,7 +1143,7 @@
       <div id="databaseTabContent" class="flex-1 overflow-y-auto flex flex-col" style="min-height:0;">
         <div class="p-3 bg-900 border-b space-y-2">
           <div class="flex gap-1.5">
-            <input id="foodSearchInput" type="text" placeholder="🔍 Cerca alimento (es. Avena, Piadina, Riso, Whey, Salmone...)"
+            <input id="foodSearchInput" type="text" placeholder="🔍 Cerca alimento (es. Avena, Piadina, Riso, Whey, Nonna...)"
               class="input-field w-full text-xs" />
             <button id="clearSearchBtn" type="button" class="hidden px-2.5 rounded-xl bg-800 border border-700 text-xs text-400">✕</button>
           </div>
@@ -1230,7 +1230,7 @@
         <div class="grid grid-cols-2 gap-2.5">
           <div class="col-span-2">
             <label class="text-10 font-bold uppercase text-300 block mb-1">Nome Alimento / Prodotto</label>
-            <input id="newDbFoodName" type="text" placeholder="Es. Tortillas Integrali / Burger Tacchino / Skyr" class="input-field w-full text-xs" />
+            <input id="newDbFoodName" type="text" placeholder="Es. Pasto Nonna / Pasto Casa / Skyr" class="input-field w-full text-xs" />
           </div>
           <div>
             <label class="text-10 font-bold uppercase text-300 block mb-1">Categoria</label>
@@ -1447,6 +1447,70 @@
     </div>
   </div>
 
+  <!-- MODAL 6: MODIFICA / ELIMINA ALIMENTO NEL DATABASE -->
+  <div id="editDbFoodModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="px-4 py-3 bg-850 border-b flex items-center justify-between">
+        <div>
+          <h2 class="text-sm font-extrabold text-white uppercase">✏️ Modifica Alimento nel Database</h2>
+          <p class="text-11 text-400">Aggiorna nome, categoria e macronutrienti per 100g/ml</p>
+        </div>
+        <button id="closeEditDbFoodBtn" type="button" class="px-2.5 py-1 rounded-lg bg-800 border border-700 text-300 font-bold btn-hover">✕</button>
+      </div>
+
+      <div class="p-4 space-y-3 overflow-y-auto" style="max-height:78vh;">
+        <input id="editDbFoodId" type="hidden" />
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="col-span-2">
+            <label class="text-10 font-bold uppercase text-300 block mb-1">Nome Alimento</label>
+            <input id="editDbFoodName" type="text" class="input-field w-full text-xs" />
+          </div>
+          <div>
+            <label class="text-10 font-bold uppercase text-300 block mb-1">Categoria</label>
+            <select id="editDbFoodCategory" class="input-field w-full text-xs">
+              <option value="carbs">🌾 Carboidrati</option>
+              <option value="protein">🥩 Proteine & Latticini</option>
+              <option value="fats">🥑 Grassi & Condimenti</option>
+              <option value="fruit">🍌 Frutta & Verdura</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-10 font-bold uppercase text-300 block mb-1">Porzione Default (g)</label>
+            <input id="editDbFoodDefaultGrams" type="number" min="1" class="input-field w-full font-mono text-xs" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-2">
+          <div>
+            <label class="text-10 font-bold uppercase text-emerald block mb-1">Kcal / 100g</label>
+            <input id="editDbFoodKcal" type="number" min="0" class="input-field w-full font-mono text-xs" />
+          </div>
+          <div>
+            <label class="text-10 font-bold uppercase text-cyan block mb-1">PRO / 100g</label>
+            <input id="editDbFoodPro" type="number" min="0" step="0.1" class="input-field w-full font-mono text-xs" />
+          </div>
+          <div>
+            <label class="text-10 font-bold uppercase text-amber block mb-1">CHO / 100g</label>
+            <input id="editDbFoodCho" type="number" min="0" step="0.1" class="input-field w-full font-mono text-xs" />
+          </div>
+          <div>
+            <label class="text-10 font-bold uppercase text-rose block mb-1">FAT / 100g</label>
+            <input id="editDbFoodFat" type="number" min="0" step="0.1" class="input-field w-full font-mono text-xs" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-2">
+          <button id="cancelEditDbFoodBtn" type="button" class="py-2.5 rounded-xl bg-800 border border-700 text-300 text-xs font-bold uppercase">
+            Annulla
+          </button>
+          <button id="saveEditDbFoodBtn" type="button" class="py-2.5 rounded-xl bg-emerald text-dark text-xs font-extrabold uppercase">
+            💾 Salva Modifiche
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST NOTIFICATION -->
   <div id="toastNotification" class="fixed left-0 right-0 z-50 flex justify-center" style="bottom:4.8rem;pointer-events:none;opacity:0;transition:opacity 0.25s ease;">
     <div class="bg-emerald text-dark font-extrabold text-xs px-4 py-2 rounded-xl shadow-2xl flex items-center gap-2">
@@ -1494,8 +1558,13 @@
 
     /********************************************************************
      * 2. DATABASE ALIMENTI ALLINEATO AL FILE "ALIMENTAZIONE" (Per 100g/ml)
+     * + AGGIUNTA PASTO NONNA E PASTO CASA
      ********************************************************************/
     const BASE_FOOD_DATABASE = [
+      // OFF-GRID MEAL PRESETS (AGGIUNTI)
+      { id: 'pasto_nonna',     name: 'Pasto Nonna (Preset Off-Grid)',     category: 'carbs',   kcal: 960, p: 40.0, c: 110.0, f: 40.0, defaultGrams: 100, hint: 'Pasto completo Nonna: 960 kcal' },
+      { id: 'pasto_casa',      name: 'Pasto Casa (Preset Off-Grid)',      category: 'carbs',   kcal: 835, p: 40.0, c: 90.0,  f: 35.0, defaultGrams: 100, hint: 'Pasto completo Casa: 835 kcal' },
+
       // CARBOIDRATI & CEREALI
       { id: 'fiocchi_avena',   name: 'Fiocchi d\'Avena / Farina d\'Avena', category: 'carbs', kcal: 370, p: 13.0, c: 60.0, f: 7.0, defaultGrams: 80,  hint: 'Colazione: 80g o 100g' },
       { id: 'fette_biscottate',name: 'Fette Biscottate',                  category: 'carbs', kcal: 405, p: 11.0, c: 75.0, f: 6.0, defaultGrams: 80,  hint: '8 fette ≈ 80g' },
@@ -1985,7 +2054,6 @@
       customFoods: [],
       mealTemplates: JSON.parse(JSON.stringify(DEFAULT_MEAL_TEMPLATES)),
       days: {}
-      // 'YYYY-MM-DD': { selectedDayId, customActivityKcal: null, waterMl: 0, meals: {...} }
     };
 
     let cloudConfig = {
@@ -2045,7 +2113,6 @@
         const rec = db.days[dateStr];
         if (rec.waterMl === undefined) rec.waterMl = 0;
         if (rec.customActivityKcal === undefined) rec.customActivityKcal = null;
-        // Clean any legacy weightKg field
         delete rec.weightKg;
         if (!rec.meals) rec.meals = createEmptyMealsObj();
         MEAL_SLOTS.forEach(s => {
@@ -2084,7 +2151,6 @@
           }
         }
 
-        // Migrate from v3.0 if present, stripping weight data and injecting the new 28 Alimentazione presets
         const rawV30 = localStorage.getItem(STORAGE_KEY_V30);
         if (rawV30) {
           const parsedV30 = JSON.parse(rawV30);
@@ -2100,7 +2166,6 @@
         console.warn('DB load warning:', e);
       }
 
-      // First boot: load today's plan from "Alimentazione"
       ensureDayRecord(activeDateStr);
       applyPlanDayToDate(activeDateStr, 'auto', false);
       db.days[activeDateStr].waterMl = 1500;
@@ -2151,16 +2216,16 @@
       const rec = ensureDayRecord(dateStr);
       const protocol = getProtocolById(rec.selectedDayId);
 
-      const bmr = ATHLETE.bmr; // 1790 kcal
+      const bmr = ATHLETE.bmr;
       const hasOverride = rec.customActivityKcal !== null && rec.customActivityKcal !== '' && Number(rec.customActivityKcal) >= 0;
       const activityKcal = hasOverride ? Math.round(Number(rec.customActivityKcal)) : protocol.activityKcal;
 
       const tdee = bmr + ATHLETE.neatBase + activityKcal;
       const targetKcal = tdee + ATHLETE.leanBulkSurplus;
 
-      const proGrams = ATHLETE.fixedProteinGrams; // 170g (680 kcal)
-      const fatGrams = ATHLETE.fixedFatGrams;     // 80g (720 kcal)
-      const fixedMacroKcal = (proGrams * 4) + (fatGrams * 9); // 1400 kcal
+      const proGrams = ATHLETE.fixedProteinGrams;
+      const fatGrams = ATHLETE.fixedFatGrams;
+      const fixedMacroKcal = (proGrams * 4) + (fatGrams * 9);
       const choGrams = Math.round(Math.max(0, targetKcal - fixedMacroKcal) / 4);
 
       const targetWaterMl = hasOverride
@@ -2797,7 +2862,7 @@
       switchMainView('tracker');
     };
 
-    // Preset Editor Modal Logic (Create or Edit any Preset)
+    // Preset Editor Modal Logic
     window.openPresetEditorModal = function(tplId = null, defaultSlot = null) {
       const allFoods = getAllFoods();
       const selectFoodEl = document.getElementById('editorAddFoodSelect');
@@ -3265,7 +3330,7 @@
     }
 
     /********************************************************************
-     * 11. MODAL CONTROLLERS (DATABASE, CREATE CUSTOM DB FOOD, ONE-OFF)
+     * 11. MODAL CONTROLLERS (DATABASE, EDIT, CREATE CUSTOM DB FOOD, ONE-OFF)
      ********************************************************************/
     window.openAddFoodModal = function(mealSlotId, initialTab = 'database') {
       activeMealSlotId = mealSlotId;
@@ -3324,8 +3389,9 @@
       document.getElementById('dbTotalCountSpan').textContent = allFoods.length;
 
       const filtered = allFoods.filter(food => {
+        const isCustomOrBase = food.isCustom || db.customFoods.some(c => c.id === food.id) || !BASE_FOOD_DATABASE.some(b => b.id === food.id);
         const matchesCat = activeCategoryFilter === 'all'
-          || (activeCategoryFilter === 'custom' && food.isCustom)
+          || (activeCategoryFilter === 'custom' && isCustomOrBase)
           || food.category === activeCategoryFilter;
         const matchesQuery = !query || food.name.toLowerCase().includes(query);
         return matchesCat && matchesQuery;
@@ -3338,6 +3404,7 @@
 
       listContainer.innerHTML = filtered.map(food => {
         const isSelected = food.id === selectedFoodId;
+        const isUserModifiable = true; // Permetti la modifica/eliminazione di tutti gli alimenti
         const rowClass = isSelected
           ? 'bg-emerald-soft border-emerald text-white'
           : 'bg-850 border text-200';
@@ -3347,18 +3414,16 @@
             <button type="button" onclick="selectDatabaseFood('${food.id}')" class="flex-1 text-left min-w-0">
               <div class="text-xs font-bold truncate flex items-center gap-1.5">
                 ${isSelected ? '<span class="text-emerald">✔</span>' : ''}
-                ${food.isCustom ? '<span class="text-amber">⭐</span>' : ''}
                 <span>${food.name}</span>
               </div>
               <div class="text-10 font-mono text-400 mt-0.5">
                 100g: <strong class="text-200">${food.kcal} kcal</strong> • <span class="text-cyan">P:${food.p}g</span> • <span class="text-amber">C:${food.c}g</span> • <span class="text-rose">F:${food.f}g</span>
               </div>
             </button>
-            <div class="flex items-center gap-1 shrink-0">
+            <div class="flex items-center gap-1.5 shrink-0">
               <span class="text-10 font-mono px-2 py-0.5 rounded bg-900 text-400 border">${food.defaultGrams}g</span>
-              ${food.isCustom ? `
-                <button type="button" onclick="deleteCustomDbFood('${food.id}')" class="px-1.5 py-0.5 rounded bg-rose-soft text-rose text-10 font-bold" title="Elimina dal DB">✕</button>
-              ` : ''}
+              <button type="button" onclick="openEditDbFoodModal('${food.id}')" class="px-2 py-1 rounded bg-800 border border-700 text-cyan text-10 font-bold btn-hover" title="Modifica alimento">✏️</button>
+              <button type="button" onclick="deleteAnyDbFood('${food.id}')" class="px-2 py-1 rounded bg-rose-soft border border-rose text-rose text-10 font-bold btn-hover" title="Elimina alimento">✕</button>
             </div>
           </div>
         `;
@@ -3376,12 +3441,43 @@
       updateLiveMacroPreview();
     };
 
-    window.deleteCustomDbFood = function(foodId) {
-      db.customFoods = (db.customFoods || []).filter(f => f.id !== foodId);
-      if (selectedFoodId === foodId) selectedFoodId = BASE_FOOD_DATABASE[0].id;
-      saveDatabase();
-      renderFoodDatabaseList();
-      showToast('Alimento custom rimosso dal DB');
+    window.openEditDbFoodModal = function(foodId) {
+      const food = findFoodById(foodId);
+      if (!food) return;
+
+      document.getElementById('editDbFoodId').value = food.id;
+      document.getElementById('editDbFoodName').value = food.name;
+      document.getElementById('editDbFoodCategory').value = food.category || 'carbs';
+      document.getElementById('editDbFoodDefaultGrams').value = food.defaultGrams || 100;
+      document.getElementById('editDbFoodKcal').value = food.kcal;
+      document.getElementById('editDbFoodPro').value = food.p;
+      document.getElementById('editDbFoodCho').value = food.c;
+      document.getElementById('editDbFoodFat').value = food.f;
+
+      document.getElementById('editDbFoodModal').classList.remove('hidden');
+    };
+
+    window.deleteAnyDbFood = function(foodId) {
+      const food = findFoodById(foodId);
+      if (!food) return;
+
+      if (confirm(`Vuoi davvero eliminare "${food.name}" dal Database?`)) {
+        // Se è nei custom foods lo rimuoviamo
+        db.customFoods = (db.customFoods || []).filter(f => f.id !== foodId);
+        // Se è tra i base food, creiamo un array di esclusione o li sovrascriviamo in una lista nascosta se necessario, oppure lo rimuoviamo direttamente dai base se l'utente vuole totale controllo
+        const baseIdx = BASE_FOOD_DATABASE.findIndex(b => b.id === foodId);
+        if (baseIdx !== -1) {
+          BASE_FOOD_DATABASE.splice(baseIdx, 1);
+        }
+
+        if (selectedFoodId === foodId) {
+          selectedFoodId = getAllFoods()[0]?.id || null;
+        }
+
+        saveDatabase();
+        renderFoodDatabaseList();
+        showToast(`Alimento "${food.name}" eliminato`);
+      }
     };
 
     function updateLiveMacroPreview() {
@@ -3828,6 +3924,49 @@
         renderTemplateList();
         renderPresetManagerView();
         renderNetworkAndSyncBadges();
+      });
+
+      // Edit DB Food Modal Events
+      document.getElementById('closeEditDbFoodBtn').addEventListener('click', () => {
+        document.getElementById('editDbFoodModal').classList.add('hidden');
+      });
+      document.getElementById('cancelEditDbFoodBtn').addEventListener('click', () => {
+        document.getElementById('editDbFoodModal').classList.add('hidden');
+      });
+      document.getElementById('saveEditDbFoodBtn').addEventListener('click', () => {
+        const fId = document.getElementById('editDbFoodId').value;
+        const name = document.getElementById('editDbFoodName').value.trim();
+        if (!name) {
+          showToast('Inserisci il nome dell\'alimento');
+          return;
+        }
+
+        const updatedData = {
+          name,
+          category: document.getElementById('editDbFoodCategory').value,
+          defaultGrams: Math.max(1, parseInt(document.getElementById('editDbFoodDefaultGrams').value) || 100),
+          kcal: Math.max(0, parseInt(document.getElementById('editDbFoodKcal').value) || 0),
+          p: Math.max(0, parseFloat(document.getElementById('editDbFoodPro').value) || 0),
+          c: Math.max(0, parseFloat(document.getElementById('editDbFoodCho').value) || 0),
+          f: Math.max(0, parseFloat(document.getElementById('editDbFoodFat').value) || 0)
+        };
+
+        // Cerca se è nei custom
+        const customObj = db.customFoods.find(c => c.id === fId);
+        if (customObj) {
+          Object.assign(customObj, updatedData);
+        } else {
+          // Se è nei base, lo aggiorniamo o lo spostiamo tra i custom modificati
+          const baseObj = BASE_FOOD_DATABASE.find(b => b.id === fId);
+          if (baseObj) {
+            Object.assign(baseObj, updatedData);
+          }
+        }
+
+        saveDatabase();
+        document.getElementById('editDbFoodModal').classList.add('hidden');
+        renderFoodDatabaseList();
+        showToast('Alimento aggiornato con successo!');
       });
 
       // Save Current Meal Slot as New Preset Modal
